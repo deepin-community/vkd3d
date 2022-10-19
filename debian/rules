@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+# enable verbose build output
+export DH_VERBOSE=1
+
+# enable all build hardening flags
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all future=+lfs
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- --enable-demos
+
+override_dh_auto_build-arch:
+	dh_auto_build
+	mv demos/.libs/gears demos/.libs/gears-vkd3d
+	mv demos/.libs/triangle demos/.libs/triangle-vkd3d
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vdlopen:Depends="$(shell ./debian/scripts/dpkg-depgrep vulkan)"

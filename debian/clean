@@ -1,0 +1,11 @@
+bin/*
+aclocal.m4
+confcache
+configure
+config.log
+m4/lt*.m4
+m4/libtool.m4
+libs/vkd3d_version.c
+include/config.h.in
+
+debian/files

@@ -1,0 +1,11 @@
+libvkd3d-utils.so.1 libvkd3d-utils1 #MINVER#
+* Build-Depends-Package: libvkd3d-dev
+ D3D12CreateDevice@VKD3D_1_0 1.0
+ D3D12CreateRootSignatureDeserializer@VKD3D_1_0 1.0
+ D3D12GetDebugInterface@VKD3D_1_0 1.0
+ D3D12SerializeRootSignature@VKD3D_1_0 1.0
+ VKD3D_1_0@VKD3D_1_0 1.0
+ vkd3d_create_event@VKD3D_1_0 1.0
+ vkd3d_destroy_event@VKD3D_1_0 1.0
+ vkd3d_signal_event@VKD3D_1_0 1.0
+ vkd3d_wait_event@VKD3D_1_0 1.0

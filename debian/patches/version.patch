@@ -1,0 +1,14 @@
+description: include debian revision in the version string
+author: Michael Gilbert <mgilbert@debian.org>
+
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -179,7 +179,7 @@ libvkd3d.pc: $(srcdir)/libs/vkd3d/libvkd
+ 		$< > $@
+ 
+ libs/vkd3d_version.c: dummy-vkd3d-version
+-	$(AM_V_GEN)version=`(GIT_DIR=$(top_srcdir)/.git git describe HEAD 2>/dev/null || echo "vkd3d-$(PACKAGE_VERSION)") | $(SED) -n -e '$$s/\(.*\)/const char vkd3d_build[] = "\1";/p'` && (echo $$version | cmp -s - $@) || echo $$version >$@ || ($(RM) $@ && exit 1)
++	$(AM_V_GEN)version=`dpkg-parsechangelog -S Version | $(SED) -n -e '$$s/\(.*\)/const char vkd3d_build[] = "debian\\/\1";/p'` && (echo $$version | cmp -s - $@) || echo $$version >$@ || ($(RM) $@ && exit 1)
+ .SILENT: libs/vkd3d_version.c
+ CLEANFILES += libs/vkd3d_version.c
+ 

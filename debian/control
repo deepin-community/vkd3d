@@ -1,0 +1,75 @@
+Source: vkd3d
+Section: libs
+Priority: optional
+Homepage: http://www.winehq.org
+Maintainer: Debian Wine Party <debian-wine@lists.debian.org>
+Uploaders:
+ Michael Gilbert <mgilbert@debian.org>,
+ Jens Reyer <jre.winesim@gmail.com>,
+Vcs-Git: https://salsa.debian.org/wine-team/vkd3d.git
+Vcs-Browser: https://salsa.debian.org/wine-team/vkd3d
+Build-Depends:
+ dpkg (>= 1.19),
+ debhelper-compat (= 12),
+ pkg-config,
+ spirv-headers,
+ libx11-dev,
+ libvulkan-dev (>= 1.1.70),
+ libxcb-util0-dev,
+ libxcb-icccm4-dev,
+ libxcb-keysyms1-dev,
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
+
+Package: libvkd3d-dev
+Section: libdevel
+Multi-Arch: same
+Architecture: any
+Depends:
+ ${misc:Depends},
+ libvkd3d1 (= ${binary:Version}),
+ libvkd3d-utils1 (= ${binary:Version}),
+Description: Direct3D 12 to Vulkan translation - development files
+ 3D graphics library that provides an API similar to Direct3D 12 built on top
+ of the Vulkan library.
+ .
+ This package provides development files.
+
+Package: libvkd3d1
+Multi-Arch: same
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${dlopen:Depends},
+ ${shlibs:Depends},
+Description: Direct3D 12 to Vulkan translation - library
+ 3D graphics library that provides an API similar to Direct3D 12 built on top
+ of the Vulkan library.
+ .
+ This package provides the library itself.
+
+Package: libvkd3d-utils1
+Multi-Arch: same
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Direct3D 12 to Vulkan translation - utilities library
+ 3D graphics library that provides an API similar to Direct3D 12 built on top
+ of the Vulkan library.
+ .
+ This package provides a utilities library.
+
+Package: vkd3d-demos
+Section: misc
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ libvkd3d1 (= ${binary:Version}),
+ libvkd3d-utils1 (= ${binary:Version}),
+Description: Direct3D 12 to Vulkan translation - demos
+ 3D graphics library that provides an API similar to Direct3D 12 built on top
+ of the Vulkan library.
+ .
+ This package provides a few demos that use the vkd3d libraries.

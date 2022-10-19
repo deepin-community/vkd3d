@@ -1,0 +1,15 @@
+description: support building with vulkan 1.2
+bug-debian: http://bugs.debian.org/963274
+author: Michael Gilbert <mgilbert@debian.org>
+
+--- a/libs/vkd3d/vkd3d_private.h
++++ b/libs/vkd3d/vkd3d_private.h
+@@ -677,7 +677,7 @@ struct d3d12_command_list
+     VkFramebuffer current_framebuffer;
+     VkPipeline current_pipeline;
+     VkRenderPass current_render_pass;
+-    struct vkd3d_pipeline_bindings pipeline_bindings[VK_PIPELINE_BIND_POINT_RANGE_SIZE];
++    struct vkd3d_pipeline_bindings pipeline_bindings[VK_PIPELINE_BIND_POINT_COMPUTE - VK_PIPELINE_BIND_POINT_GRAPHICS + 1];
+ 
+     struct d3d12_pipeline_state *state;
+ 

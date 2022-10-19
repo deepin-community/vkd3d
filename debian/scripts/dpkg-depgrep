@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 2015-2020 Michael Gilbert <mgilbert@debian.org>
+#
+# Return the library packages associated with all of the -dev packages
+# found via regex of the build-deps in the local control file.
+#
+# License: LGPL-2+
+
+use strict;
+use warnings;
+
+use Dpkg::Deps;
+use Dpkg::Arch;
+use Dpkg::Control::Info;
+
+if ($#ARGV < 0) {
+    print "usage: $0 <regex to find in the control file's Build-Depends field>\n";
+} else {
+    my $arch = Dpkg::Arch::get_host_arch();
+    my $triplet = Dpkg::Arch::debarch_to_multiarch($arch);
+    my $control = Dpkg::Control::Info->new()->get_source();
+    my $depends = deps_parse($control->{'Build-Depends'});
+    foreach (split /,\s+/,$depends) {
+        if ($_ =~ /$ARGV[0]/) {
+            $_ =~ s/-dev//;
+            my @array = split ' ', $_;
+            my $name = shift @array;
+            my $version = readlink "/usr/lib/$triplet/$name.so";
+            $version =~ s/\.so\.//;
+            print "$version @array\n";
+        }
+    }
+}

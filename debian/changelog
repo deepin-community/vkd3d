@@ -1,0 +1,97 @@
+vkd3d (1.1-5) UNRELEASED; urgency=medium
+
+  * update
+
+ -- Debian Wine Party <debian-wine@lists.debian.org>  Wed, 18 May 2022 10:02:45 +0800
+
+vkd3d (1.1-5) unstable; urgency=medium
+
+  * Include upstream metadata information.
+  * Add support for vulkan 1.2 (closes: #963274).
+  * Indicate that debian/rules does not require root.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Mon, 22 Jun 2020 02:00:46 +0000
+
+vkd3d (1.1-4) unstable; urgency=medium
+
+  * Update to debhelper 12.
+  * Update standards version to 4.5.0.
+  * Support cross building (closes: #949823).
+    - Thanks to Helmut Grohne.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 01 Feb 2020 20:11:47 +0000
+
+vkd3d (1.1-3) unstable; urgency=medium
+
+  [ Jens Reyer ]
+  * Update copyright info.
+  * Add myself to uploaders.
+  * Add Vcs fields to d/control.
+  * Add "or later" to license LGPL-2.1.
+  * Add Build-Depends-Package field to symbols files.
+  * Strip unnecessary signature from upstream signing key.
+  * Make build-dependency on libvulkan-dev versioned (closes: #919889).
+
+  [ Michael Gilbert ]
+  * Include debian revision in the version string.
+  * Add missing vulkan dependency (closes: #921200).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 16 Feb 2019 02:11:35 +0000
+
+vkd3d (1.1-2) unstable; urgency=medium
+
+  * Include new upstream symbol.
+  * Update standards version to 4.3.0.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Fri, 18 Jan 2019 01:53:38 +0000
+
+vkd3d (1.1-1) unstable; urgency=medium
+
+  * New upstream release.
+    - MoltenVK support.
+    - Support for geometry shaders.
+    - Initial support for placed resources.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 13 Oct 2018 01:03:05 +0000
+
+vkd3d (1.0-6) unstable; urgency=medium
+
+  * Add symbols files.
+  * Move demos to misc section.
+  * Build with large file support.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Mon, 03 Sep 2018 03:22:48 +0000
+
+vkd3d (1.0-5) unstable; urgency=medium
+
+  * Update standards version.
+  * Add missing libvkd3d-utils1 dependency (closes: #906191).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 25 Aug 2018 21:22:32 +0000
+
+vkd3d (1.0-4) unstable; urgency=medium
+
+  * Rename libvkd3d1-utils package to libvkd3d-utils1.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 24 Jun 2018 15:14:10 +0000
+
+vkd3d (1.0-3) unstable; urgency=medium
+
+  * Add manpages for the demos.
+  * Append lib to library package names.
+  * Append vkd3d to the demo files (closes: #901043).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 24 Jun 2018 04:08:32 +0000
+
+vkd3d (1.0-2) unstable; urgency=medium
+
+  * Add libx11-dev to the build dependencies.
+  * Remove multi-arch from the demos package.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 02 Jun 2018 21:03:23 +0000
+
+vkd3d (1.0-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Fri, 25 May 2018 02:31:55 +0000
