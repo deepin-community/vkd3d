@@ -22,9 +22,23 @@
 #include "config.h"
 #include "vkd3d_windows.h"
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+#include <ctype.h>
+#include <limits.h>
+#include <stdbool.h>
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
+#ifndef ARRAY_SIZE
+# define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+#endif
 
 #define DIV_ROUND_UP(a, b) ((a) % (b) == 0 ? (a) / (b) : (a) / (b) + 1)
+
+#define STATIC_ASSERT(e) extern void __VKD3D_STATIC_ASSERT__(int [(e) ? 1 : -1])
+
+#define MEMBER_SIZE(t, m) sizeof(((t *)0)->m)
 
 static inline size_t align(size_t addr, size_t alignment)
 {
@@ -41,7 +55,9 @@ static inline size_t align(size_t addr, size_t alignment)
 
 static inline unsigned int vkd3d_popcount(unsigned int v)
 {
-#ifdef HAVE_BUILTIN_POPCOUNT
+#ifdef _MSC_VER
+    return __popcnt(v);
+#elif defined(HAVE_BUILTIN_POPCOUNT)
     return __builtin_popcount(v);
 #else
     v -= (v >> 1) & 0x55555555;
@@ -50,10 +66,31 @@ static inline unsigned int vkd3d_popcount(unsigned int v)
 #endif
 }
 
+static inline bool vkd3d_bitmask_is_contiguous(unsigned int mask)
+{
+    unsigned int i, j;
+
+    for (i = 0, j = 0; i < sizeof(mask) * CHAR_BIT; ++i)
+    {
+        if (mask & (1u << i))
+            ++j;
+        else if (j)
+            break;
+    }
+
+    return vkd3d_popcount(mask) == j;
+}
+
 /* Undefined for x == 0. */
 static inline unsigned int vkd3d_log2i(unsigned int x)
 {
-#ifdef HAVE_BUILTIN_CLZ
+#ifdef _MSC_VER
+    /* _BitScanReverse returns the index of the highest set bit,
+     * unlike clz which is 31 - index. */
+    unsigned long result;
+    _BitScanReverse(&result, x);
+    return (unsigned int)result;
+#elif defined(HAVE_BUILTIN_CLZ)
     return __builtin_clz(x) ^ 0x1f;
 #else
     static const unsigned int l[] =
@@ -82,6 +119,29 @@ static inline unsigned int vkd3d_log2i(unsigned int x)
 #endif
 }
 
+static inline int ascii_isupper(int c)
+{
+    return 'A' <= c && c <= 'Z';
+}
+
+static inline int ascii_tolower(int c)
+{
+    return ascii_isupper(c) ? c - 'A' + 'a' : c;
+}
+
+static inline int ascii_strcasecmp(const char *a, const char *b)
+{
+    int c_a, c_b;
+
+    do
+    {
+        c_a = ascii_tolower(*a++);
+        c_b = ascii_tolower(*b++);
+    } while (c_a == c_b && c_a != '\0');
+
+    return c_a - c_b;
+}
+
 #ifndef _WIN32
 # if HAVE_SYNC_ADD_AND_FETCH
 static inline LONG InterlockedIncrement(LONG volatile *x)
@@ -89,7 +149,7 @@ static inline LONG InterlockedIncrement(LONG volatile *x)
     return __sync_add_and_fetch(x, 1);
 }
 # else
-#  error "InterlockedIncrement not implemented for this platform"
+#  error "InterlockedIncrement() not implemented for this platform"
 # endif  /* HAVE_SYNC_ADD_AND_FETCH */
 
 # if HAVE_SYNC_SUB_AND_FETCH
@@ -98,8 +158,29 @@ static inline LONG InterlockedDecrement(LONG volatile *x)
     return __sync_sub_and_fetch(x, 1);
 }
 # else
-#  error "InterlockedDecrement not implemented for this platform"
+#  error "InterlockedDecrement() not implemented for this platform"
 # endif
 #endif  /* _WIN32 */
+
+#if HAVE_SYNC_ADD_AND_FETCH
+# define atomic_add_fetch(ptr, val) __sync_add_and_fetch(ptr, val)
+#elif defined(_MSC_VER)
+/* InterlockedAdd returns value after increment, like add_and_fetch. */
+# define atomic_add_fetch(ptr, val) InterlockedAdd(ptr, val)
+#else
+# error "atomic_add_fetch() not implemented for this platform"
+#endif  /* HAVE_SYNC_ADD_AND_FETCH */
+
+static inline void vkd3d_parse_version(const char *version, int *major, int *minor)
+{
+    *major = atoi(version);
+
+    while (isdigit(*version))
+        ++version;
+    if (*version == '.')
+        ++version;
+
+    *minor = atoi(version);
+}
 
 #endif  /* __VKD3D_COMMON_H */

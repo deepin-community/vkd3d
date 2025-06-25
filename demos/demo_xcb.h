@@ -18,7 +18,9 @@
  */
 
 #define VK_USE_PLATFORM_XCB_KHR
+#define VKD3D_UTILS_API_VERSION VKD3D_API_VERSION_1_2
 #include <vkd3d.h>
+#include <vkd3d_utils.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xcb_icccm.h>
 #include <xcb/xcb_keysyms.h>

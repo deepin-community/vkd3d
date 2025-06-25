@@ -1,0 +1,52 @@
+description: completely ignore results of d3d12 tests when using llvmpipe
+author: Michael Gilbert <mgilbert@debian.org>
+
+--- a/tests/d3d12_crosstest.h
++++ b/tests/d3d12_crosstest.h
+@@ -611,6 +611,14 @@ static inline bool is_mesa_intel_device(
+     return properties.driverID == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA_KHR;
+ }
+ 
++static inline bool is_mesa_llvmpipe_device(ID3D12Device *device)
++{
++    VkPhysicalDeviceDriverPropertiesKHR properties;
++
++    get_driver_properties(device, &properties);
++    return properties.driverID == VK_DRIVER_ID_MESA_LLVMPIPE;
++}
++
+ static inline bool is_nvidia_device(ID3D12Device *device)
+ {
+     VkPhysicalDeviceDriverPropertiesKHR properties;
+--- a/tests/d3d12.c
++++ b/tests/d3d12.c
+@@ -32960,6 +32960,14 @@ static void test_register_space(void)
+     command_list = context.list;
+     queue = context.queue;
+ 
++    /* this test causes a segfault in libvulkan_lvp.so (llvmpipe), skip it */
++    if (is_mesa_llvmpipe_device(device))
++    {
++        /* use -1 to indicate that test results need to be ignored */
++        vkd3d_test_state.failure_count = -1;
++        return;
++    }
++
+     memset(&root_signature_desc, 0, sizeof(root_signature_desc));
+     root_signature_desc.NumParameters = ARRAY_SIZE(root_parameters);
+     root_signature_desc.pParameters = root_parameters;
+--- a/include/private/vkd3d_test.h
++++ b/include/private/vkd3d_test.h
+@@ -290,6 +290,12 @@ int main(int argc, char **argv)
+     if (test_platform)
+         free(test_platform);
+ 
++    /* exit status 77 tells automake's test harness to SKIP this test */
++    if (vkd3d_test_state.failure_count == -1)
++    {
++        return 77;
++    }
++
+     return vkd3d_test_state.failure_count || vkd3d_test_state.todo_success_count;
+ }
+ 

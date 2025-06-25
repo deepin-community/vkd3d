@@ -22,7 +22,7 @@
 #include "vkd3d_test.h"
 #include <vkd3d.h>
 
-#include "vkd3d_d3d12_test.h"
+#include "d3d12_test_utils.h"
 
 HRESULT WINAPI D3D12SerializeRootSignature(const D3D12_ROOT_SIGNATURE_DESC *root_signature_desc,
         D3D_ROOT_SIGNATURE_VERSION version, ID3DBlob **blob, ID3DBlob **error_blob)
@@ -58,9 +58,16 @@ static HRESULT signal_event(HANDLE event)
     return S_OK;
 }
 
+static const struct vkd3d_application_info instance_default_application_info =
+{
+    .type = VKD3D_STRUCTURE_TYPE_APPLICATION_INFO,
+    .api_version = VKD3D_API_VERSION_1_2,
+};
+
 static const struct vkd3d_instance_create_info instance_default_create_info =
 {
     .type = VKD3D_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+    .next = &instance_default_application_info,
     .wchar_size = sizeof(WCHAR),
     .pfn_signal_event = signal_event,
 };
@@ -80,23 +87,6 @@ static ID3D12Device *create_device(void)
     hr = vkd3d_create_device(&device_default_create_info,
             &IID_ID3D12Device, (void **)&device);
     return SUCCEEDED(hr) ? device : NULL;
-}
-
-static ID3D12CommandQueue *create_command_queue(ID3D12Device *device,
-        D3D12_COMMAND_LIST_TYPE type)
-{
-    D3D12_COMMAND_QUEUE_DESC desc;
-    ID3D12CommandQueue *queue;
-    HRESULT hr;
-
-    desc.Type = type;
-    desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-    desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    desc.NodeMask = 0;
-    hr = ID3D12Device_CreateCommandQueue(device, &desc,
-            &IID_ID3D12CommandQueue, (void **)&queue);
-    ok(hr == S_OK, "Failed to create command queue, hr %#x.\n", hr);
-    return queue;
 }
 
 static void test_create_instance(void)
@@ -478,6 +468,51 @@ static void test_additional_device_extensions(void)
     ok(!refcount, "Instance has %u references left.\n", refcount);
 }
 
+static void test_optional_device_extensions(void)
+{
+    static const char * const extensions[] =
+    {
+        "VK_VKD3D_invalid_extension",
+        VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+    };
+
+    struct vkd3d_optional_device_extensions_info optional_extensions;
+    struct vkd3d_instance_create_info instance_create_info;
+    struct vkd3d_device_create_info device_create_info;
+    struct vkd3d_instance *instance;
+    ID3D12Device *device;
+    ULONG refcount;
+    HRESULT hr;
+
+    instance_create_info = instance_default_create_info;
+    hr = vkd3d_create_instance(&instance_create_info, &instance);
+    ok(hr == S_OK, "Failed to create instance, hr %#x.\n", hr);
+
+    device_create_info = device_default_create_info;
+    device_create_info.instance = instance;
+    device_create_info.instance_create_info = NULL;
+    device_create_info.device_extensions = extensions;
+    device_create_info.device_extension_count = ARRAY_SIZE(extensions);
+    hr = vkd3d_create_device(&device_create_info, &IID_ID3D12Device, (void **)&device);
+    ok(hr == E_FAIL, "Got unexpected hr %#x.\n", hr);
+
+    optional_extensions.type = VKD3D_STRUCTURE_TYPE_OPTIONAL_DEVICE_EXTENSIONS_INFO;
+    optional_extensions.next = NULL;
+    optional_extensions.extensions = extensions;
+    optional_extensions.extension_count = ARRAY_SIZE(extensions);
+
+    device_create_info.next = &optional_extensions;
+    device_create_info.device_extensions = NULL;
+    device_create_info.device_extension_count = 0;
+    hr = vkd3d_create_device(&device_create_info, &IID_ID3D12Device, (void **)&device);
+    ok(hr == S_OK, "Failed to create device, hr %#x.\n", hr);
+
+    refcount = ID3D12Device_Release(device);
+    ok(!refcount, "Device has %u references left.\n", refcount);
+    refcount = vkd3d_instance_decref(instance);
+    ok(!refcount, "Instance has %u references left.\n", refcount);
+}
+
 static void test_physical_device(void)
 {
     struct vkd3d_device_create_info create_info;
@@ -514,18 +549,25 @@ static void test_physical_device(void)
     vr = vkEnumeratePhysicalDevices(vk_instance, &count, vk_physical_devices);
     ok(vr == VK_SUCCESS, "Got unexpected VkResult %d.\n", vr);
 
-    for (i = 0; i < count; ++i)
+    if (!getenv("VKD3D_VULKAN_DEVICE"))
     {
-        trace("Creating device for Vulkan physical device %p.\n", vk_physical_devices[i]);
+        for (i = 0; i < count; ++i)
+        {
+            trace("Creating device for Vulkan physical device %p.\n", vk_physical_devices[i]);
 
-        create_info.vk_physical_device = vk_physical_devices[i];
-        hr = vkd3d_create_device(&create_info, &IID_ID3D12Device, (void **)&device);
-        ok(hr == S_OK, "Failed to create device, hr %#x.\n", hr);
-        vk_physical_device = vkd3d_get_vk_physical_device(device);
-        ok(vk_physical_device == vk_physical_devices[i],
-                "Got unexpected Vulkan physical device %p.\n", vk_physical_device);
-        refcount = ID3D12Device_Release(device);
-        ok(!refcount, "Device has %u references left.\n", refcount);
+            create_info.vk_physical_device = vk_physical_devices[i];
+            hr = vkd3d_create_device(&create_info, &IID_ID3D12Device, (void **)&device);
+            ok(hr == S_OK, "Failed to create device, hr %#x.\n", hr);
+            vk_physical_device = vkd3d_get_vk_physical_device(device);
+            ok(vk_physical_device == vk_physical_devices[i],
+                    "Got unexpected Vulkan physical device %p.\n", vk_physical_device);
+            refcount = ID3D12Device_Release(device);
+            ok(!refcount, "Device has %u references left.\n", refcount);
+        }
+    }
+    else
+    {
+        skip("VKD3D_VULKAN_DEVICE is set.\n");
     }
 
     free(vk_physical_devices);
@@ -647,11 +689,11 @@ static void test_vkd3d_queue(void)
     device = create_device();
     ok(device, "Failed to create device.\n");
 
-    direct_queue = create_command_queue(device, D3D12_COMMAND_LIST_TYPE_DIRECT);
+    direct_queue = create_command_queue(device, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL);
     ok(direct_queue, "Failed to create direct command queue.\n");
-    compute_queue = create_command_queue(device, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+    compute_queue = create_command_queue(device, D3D12_COMMAND_LIST_TYPE_COMPUTE, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL);
     ok(compute_queue, "Failed to create compute command queue.\n");
-    copy_queue = create_command_queue(device, D3D12_COMMAND_LIST_TYPE_COPY);
+    copy_queue = create_command_queue(device, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL);
     ok(copy_queue, "Failed to create copy command queue.\n");
 
     vk_queue_family = vkd3d_get_vk_queue_family_index(direct_queue);
@@ -816,7 +858,74 @@ static VkDeviceMemory allocate_vulkan_image_memory(ID3D12Device *device,
     return vk_memory;
 }
 
-static void test_vulkan_resource_present_state(void)
+static void test_external_resource_map(void)
+{
+    struct vkd3d_image_resource_create_info resource_create_info;
+    D3D12_HEAP_PROPERTIES heap_properties;
+    D3D12_GPU_VIRTUAL_ADDRESS gpu_address;
+    D3D12_HEAP_FLAGS heap_flags;
+    ID3D12Resource *vk_resource;
+    VkDeviceMemory vk_memory;
+    ID3D12Device *device;
+    VkDevice vk_device;
+    VkImage vk_image;
+    ULONG refcount;
+    HRESULT hr;
+    void *ptr;
+
+    device = create_device();
+    ok(device, "Failed to create device.\n");
+
+    vk_image = create_vulkan_image(device, 32, 32,
+            VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vk_memory = allocate_vulkan_image_memory(device,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vk_image);
+
+    resource_create_info.type = VKD3D_STRUCTURE_TYPE_IMAGE_RESOURCE_CREATE_INFO;
+    resource_create_info.next = NULL;
+    resource_create_info.vk_image = vk_image;
+    resource_create_info.desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    resource_create_info.desc.Alignment = 0;
+    resource_create_info.desc.Width = 32;
+    resource_create_info.desc.Height = 32;
+    resource_create_info.desc.DepthOrArraySize = 1;
+    resource_create_info.desc.MipLevels = 1;
+    resource_create_info.desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    resource_create_info.desc.SampleDesc.Count = 1;
+    resource_create_info.desc.SampleDesc.Quality = 0;
+    resource_create_info.desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    resource_create_info.desc.Flags = 0;
+    resource_create_info.flags = VKD3D_RESOURCE_INITIAL_STATE_TRANSITION;
+    hr = vkd3d_create_image_resource(device, &resource_create_info, &vk_resource);
+    ok(hr == S_OK, "Failed to create D3D12 resource for Vulkan image, hr %#x.\n", hr);
+
+    ptr = (void *)0xdeadbeef;
+    hr = ID3D12Resource_Map(vk_resource, 0, NULL, &ptr);
+    ok(hr == E_INVALIDARG, "Got unexpected hr %#x.\n", hr);
+    ok(ptr == (void *)0xdeadbeef, "Pointer was modified %p.\n", ptr);
+
+    gpu_address = ID3D12Resource_GetGPUVirtualAddress(vk_resource);
+    ok(!gpu_address, "Got unexpected GPU virtual address %#"PRIx64".\n", gpu_address);
+
+    hr = ID3D12Resource_GetHeapProperties(vk_resource, &heap_properties, &heap_flags);
+    ok(hr == S_OK, "Got unexpected hr %#x.\n", hr);
+    ok(heap_properties.Type == D3D12_HEAP_TYPE_DEFAULT, "Got unexpected heap type %#x.\n", heap_properties.Type);
+    ok(heap_properties.CPUPageProperty == D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+            "Got unexpected CPU page property %#x.\n", heap_properties.CPUPageProperty);
+    ok(heap_properties.MemoryPoolPreference == D3D12_MEMORY_POOL_UNKNOWN,
+            "Got unexpected memory pool preference %#x.\n", heap_properties.MemoryPoolPreference);
+    ok(!!heap_properties.CreationNodeMask, "Got unexpected node mask %#x.\n", heap_properties.CreationNodeMask);
+    ok(!!heap_properties.VisibleNodeMask, "Got unexpected node mask %#x.\n", heap_properties.VisibleNodeMask);
+
+    ID3D12Resource_Release(vk_resource);
+    vk_device = vkd3d_get_vk_device(device);
+    vkDestroyImage(vk_device, vk_image, NULL);
+    vkFreeMemory(vk_device, vk_memory, NULL);
+    refcount = ID3D12Device_Release(device);
+    ok(!refcount, "Device has %u references left.\n", refcount);
+}
+
+static void test_external_resource_present_state(void)
 {
     static const float white[] = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -875,7 +984,7 @@ static void test_vulkan_resource_present_state(void)
             D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, rtv, white, 0, NULL);
-    ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &rtv, FALSE, NULL);
+    ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &rtv, false, NULL);
     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
     ID3D12GraphicsCommandList_SetPipelineState(command_list, context.pipeline_state);
     ID3D12GraphicsCommandList_IASetPrimitiveTopology(command_list, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -962,6 +1071,104 @@ static void test_formats(void)
     }
 }
 
+static void test_application_info(void)
+{
+    D3D12_FEATURE_DATA_ROOT_SIGNATURE root_signature;
+    struct vkd3d_instance_create_info create_info;
+    struct vkd3d_device_create_info device_info;
+    struct vkd3d_application_info app_info;
+    struct vkd3d_instance *instance;
+    ID3D12Device *device;
+    unsigned int i;
+    ULONG refcount;
+    HRESULT hr;
+
+    static const struct
+    {
+        enum vkd3d_api_version api_version;
+        D3D_ROOT_SIGNATURE_VERSION rs_version;
+    }
+    root_signature_versions[] =
+    {
+        {VKD3D_API_VERSION_1_0, D3D_ROOT_SIGNATURE_VERSION_1_0},
+        {VKD3D_API_VERSION_1_1, D3D_ROOT_SIGNATURE_VERSION_1_0},
+        {VKD3D_API_VERSION_1_2, D3D_ROOT_SIGNATURE_VERSION_1_1},
+    };
+
+    app_info.type = VKD3D_STRUCTURE_TYPE_APPLICATION_INFO;
+    app_info.next = NULL;
+    app_info.engine_name = NULL;
+    app_info.engine_version = 0;
+    app_info.application_name = NULL;
+    app_info.application_version = 0;
+    app_info.api_version = VKD3D_API_VERSION_1_0;
+
+    create_info = instance_default_create_info;
+    create_info.next = &app_info;
+    hr = vkd3d_create_instance(&create_info, &instance);
+    ok(hr == S_OK, "Failed to create instance, hr %#x.\n", hr);
+    refcount = vkd3d_instance_decref(instance);
+    ok(!refcount, "Instance has %u references left.\n", refcount);
+
+    app_info.application_name = "vkd3d_api_tests";
+    app_info.application_version = 0xdeadbeef;
+    hr = vkd3d_create_instance(&create_info, &instance);
+    ok(hr == S_OK, "Failed to create instance, hr %#x.\n", hr);
+    refcount = vkd3d_instance_decref(instance);
+    ok(!refcount, "Instance has %u references left.\n", refcount);
+
+    app_info.engine_name = "engine_name";
+    hr = vkd3d_create_instance(&create_info, &instance);
+    ok(hr == S_OK, "Failed to create instance, hr %#x.\n", hr);
+    refcount = vkd3d_instance_decref(instance);
+    ok(!refcount, "Instance has %u references left.\n", refcount);
+
+    app_info.engine_name = "engine_name";
+    app_info.engine_version = 2;
+    hr = vkd3d_create_instance(&create_info, &instance);
+    ok(hr == S_OK, "Failed to create instance, hr %#x.\n", hr);
+    refcount = vkd3d_instance_decref(instance);
+    ok(!refcount, "Instance has %u references left.\n", refcount);
+
+    device_info = device_default_create_info;
+    device_info.instance_create_info = &create_info;
+    for (i = 0; i < ARRAY_SIZE(root_signature_versions); ++i)
+    {
+        app_info.api_version = root_signature_versions[i].api_version;
+        hr = vkd3d_create_device(&device_info, &IID_ID3D12Device, (void **)&device);
+        ok(hr == S_OK, "Got unexpected hr %#x.\n", hr);
+
+        root_signature.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+        hr = ID3D12Device_CheckFeatureSupport(device, D3D12_FEATURE_ROOT_SIGNATURE,
+                &root_signature, sizeof(root_signature));
+        ok(hr == S_OK, "Got unexpected hr %#x.\n", hr);
+        ok(root_signature.HighestVersion == D3D_ROOT_SIGNATURE_VERSION_1_0,
+                "Got unexpected root signature feature version %#x.\n", root_signature.HighestVersion);
+
+        root_signature.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+        hr = ID3D12Device_CheckFeatureSupport(device, D3D12_FEATURE_ROOT_SIGNATURE,
+                &root_signature, sizeof(root_signature));
+        ok(hr == S_OK, "Got unexpected hr %#x.\n", hr);
+        ok(root_signature.HighestVersion == root_signature_versions[i].rs_version,
+                "Got unexpected root signature feature version %#x.\n", root_signature.HighestVersion);
+
+        ID3D12Device_Release(device);
+    }
+
+    create_info.next = NULL;
+    hr = vkd3d_create_device(&device_info, &IID_ID3D12Device, (void **)&device);
+    ok(hr == S_OK, "Got unexpected hr %#x.\n", hr);
+
+    root_signature.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+    hr = ID3D12Device_CheckFeatureSupport(device, D3D12_FEATURE_ROOT_SIGNATURE,
+            &root_signature, sizeof(root_signature));
+    ok(hr == S_OK, "Got unexpected hr %#x.\n", hr);
+    ok(root_signature.HighestVersion == D3D_ROOT_SIGNATURE_VERSION_1_0,
+            "Got unexpected root signature feature version %#x.\n", root_signature.HighestVersion);
+
+    ID3D12Device_Release(device);
+}
+
 static bool have_d3d12_device(void)
 {
     ID3D12Device *device;
@@ -984,11 +1191,14 @@ START_TEST(vkd3d_api)
     run_test(test_create_device);
     run_test(test_required_device_extensions);
     run_test(test_additional_device_extensions);
+    run_test(test_optional_device_extensions);
     run_test(test_physical_device);
     run_test(test_adapter_luid);
     run_test(test_device_parent);
     run_test(test_vkd3d_queue);
     run_test(test_resource_internal_refcount);
-    run_test(test_vulkan_resource_present_state);
+    run_test(test_external_resource_map);
+    run_test(test_external_resource_present_state);
     run_test(test_formats);
+    run_test(test_application_info);
 }

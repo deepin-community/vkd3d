@@ -73,7 +73,7 @@ struct cx_triangle
     struct demo_swapchain *swapchain;
     ID3D12DescriptorHeap *rtv_heap;
     unsigned int rtv_descriptor_size;
-    ID3D12Resource *render_targets[2];
+    ID3D12Resource *render_targets[3];
     ID3D12CommandAllocator *command_allocator;
 
     ID3D12RootSignature *root_signature;
@@ -142,7 +142,8 @@ static void cxt_wait_for_previous_frame(struct cx_triangle *cxt)
 
     if (ID3D12Fence_GetCompletedValue(fence->fence) < v)
     {
-        ID3D12Fence_SetEventOnCompletion(fence->fence, v, fence->event);
+        hr = ID3D12Fence_SetEventOnCompletion(fence->fence, v, fence->event);
+        assert(SUCCEEDED(hr));
         demo_wait_event(fence->event, INFINITE);
     }
 

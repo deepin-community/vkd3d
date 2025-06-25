@@ -20,10 +20,24 @@
 #define __VKD3D_WINDOWS_H
 #ifndef _INC_WINDOWS
 
+/* Nameless unions */
+#ifndef __C89_NAMELESS
+# ifdef NONAMELESSUNION
+#  define __C89_NAMELESS
+#  define __C89_NAMELESSUNIONNAME u
+# else
+#  define __C89_NAMELESS
+#  define __C89_NAMELESSUNIONNAME
+# endif /* NONAMELESSUNION */
+#endif  /* __C89_NAMELESS */
+
 #if !defined(_WIN32) || defined(__WIDL__)
 
-# if !defined(__WIDL__) && !defined(VKD3D_WIN32_WCHAR)
-#  include <wchar.h>
+# if !defined(__WIDL__)
+#  if !defined(VKD3D_WIN32_WCHAR)
+#   include <wchar.h>
+#  endif
+#  include <stdint.h>
 # endif
 
 # ifdef __GNUC__
@@ -48,6 +62,9 @@ typedef int HRESULT;
 # define E_OUTOFMEMORY _HRESULT_TYPEDEF_(0x8007000E)
 # define E_INVALIDARG  _HRESULT_TYPEDEF_(0x80070057)
 
+# define DXGI_ERROR_NOT_FOUND _HRESULT_TYPEDEF_(0x887a0002)
+# define DXGI_ERROR_MORE_DATA _HRESULT_TYPEDEF_(0x887a0003)
+
 /* Basic types */
 typedef unsigned char BYTE;
 typedef unsigned int DWORD;
@@ -65,12 +82,12 @@ typedef short INT16;
 typedef unsigned short UINT16;
 typedef int INT32;
 typedef unsigned int UINT32;
-# if defined(__x86_64__) || defined(__WIDL__)
-typedef long INT64;
-typedef unsigned long UINT64;
+# if defined(__WIDL__)
+typedef __int64 INT64;
+typedef unsigned __int64 UINT64;
 # else
-typedef long long DECLSPEC_ALIGN(8) INT64;
-typedef unsigned long long DECLSPEC_ALIGN(8) UINT64;
+typedef int64_t DECLSPEC_ALIGN(8) INT64;
+typedef uint64_t DECLSPEC_ALIGN(8) UINT64;
 # endif
 typedef long LONG_PTR;
 typedef unsigned long ULONG_PTR;
@@ -219,17 +236,6 @@ typedef struct SECURITY_ATTRIBUTES SECURITY_ATTRIBUTES;
 
 #endif  /* _WIN32 */
 
-
-/* Nameless unions */
-#ifndef __C89_NAMELESS
-# ifdef NONAMELESSUNION
-#  define __C89_NAMELESS
-#  define __C89_NAMELESSUNIONNAME u
-# else
-#  define __C89_NAMELESS
-#  define __C89_NAMELESSUNIONNAME
-# endif /* NONAMELESSUNION */
-#endif  /* __C89_NAMELESS */
 
 /* Define DECLSPEC_HIDDEN */
 #ifndef DECLSPEC_HIDDEN

@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0
-Upstream-Name: vkd3d
 Source: https://dl.winehq.org/vkd3d/source
+Upstream-Name: vkd3d
 Files-Excluded:
  bin
  m4/lt*.m4
@@ -8,17 +8,26 @@ Files-Excluded:
  aclocal.m4
  configure
  Makefile.in
- libs/vkd3d_version.c
  include/config.h.in
+ include/vkd3d_d3dcommon.h
+ include/vkd3d_d3d12.h
+ include/vkd3d_d3d12sdklayers.h
+ include/vkd3d_dxgi.h
+ include/vkd3d_dxgibase.h
+ include/vkd3d_dxgitype.h
+ include/vkd3d_dxgiformat.h
+ include/vkd3d_dxgi1_2.h
+ include/vkd3d_dxgi1_3.h
+ include/vkd3d_dxgi1_4.h
 
 Files: *
 Copyright:
- 2016-2018 the Vkd3d project authors (see AUTHORS file)
+ 2016-2021 the Vkd3d project authors (see AUTHORS file)
 License: LGPL-2.1+
 
 Files: debian/*
 Copyright:
- 2018-2019 Michael Gilbert <mgilbert@debian.org>
+ 2018-2021 Michael Gilbert <mgilbert@debian.org>
  2019 Jens Reyer <jre.winesim@gmail.com>
 License: LGPL-2.1+
 

@@ -19,6 +19,12 @@
 #ifndef __VKD3D_UTILS_H
 #define __VKD3D_UTILS_H
 
+#include <vkd3d.h>
+
+#ifndef VKD3D_UTILS_API_VERSION
+#define VKD3D_UTILS_API_VERSION VKD3D_API_VERSION_1_0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif  /* __cplusplus */
@@ -28,10 +34,25 @@ extern "C" {
 #define VKD3D_WAIT_FAILED (~0u)
 #define VKD3D_INFINITE (~0u)
 
+/* 1.0 */
 HANDLE vkd3d_create_event(void);
 HRESULT vkd3d_signal_event(HANDLE event);
 unsigned int vkd3d_wait_event(HANDLE event, unsigned int milliseconds);
 void vkd3d_destroy_event(HANDLE event);
+
+#define D3D12CreateDevice(a, b, c, d) D3D12CreateDeviceVKD3D(a, b, c, d, VKD3D_UTILS_API_VERSION)
+HRESULT WINAPI D3D12CreateRootSignatureDeserializer(const void *data, SIZE_T data_size, REFIID iid, void **deserializer);
+HRESULT WINAPI D3D12GetDebugInterface(REFIID iid, void **debug);
+HRESULT WINAPI D3D12SerializeRootSignature(const D3D12_ROOT_SIGNATURE_DESC *desc,
+        D3D_ROOT_SIGNATURE_VERSION version, ID3DBlob **blob, ID3DBlob **error_blob);
+
+/* 1.2 */
+HRESULT WINAPI D3D12CreateDeviceVKD3D(IUnknown *adapter, D3D_FEATURE_LEVEL feature_level,
+        REFIID iid, void **device, enum vkd3d_api_version api_version);
+HRESULT WINAPI D3D12CreateVersionedRootSignatureDeserializer(const void *data,
+        SIZE_T data_size, REFIID iid, void **deserializer);
+HRESULT WINAPI D3D12SerializeVersionedRootSignature(const D3D12_VERSIONED_ROOT_SIGNATURE_DESC *desc,
+        ID3DBlob **blob, ID3DBlob **error_blob);
 
 #ifdef __cplusplus
 }

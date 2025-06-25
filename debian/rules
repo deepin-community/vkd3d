@@ -1,21 +1,73 @@
 #!/usr/bin/make -f
 
+# import DEB_VERSION and DEB_HOST_ARCH
+include /usr/share/dpkg/pkg-info.mk
+include /usr/share/dpkg/architecture.mk
+
 # enable verbose build output
 export DH_VERBOSE=1
 
 # enable all build hardening flags
-export DEB_BUILD_MAINT_OPTIONS=hardening=+all future=+lfs
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all future=+lfs optimize=+lto
+
+# disable executable stack
+export DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,execstack
+
+# configure flags
+CONFLAGS=--enable-demos \
+
+# use widl to build the header files
+CONFLAGS+=WIDL=i686-w64-mingw32-widl
 
 %:
+	# debhelper catch all rule
 	dh $@
 
 override_dh_auto_configure:
-	dh_auto_configure -- --enable-demos
+	# run the configure script
+	dh_auto_configure -- $(CONFLAGS)
 
 override_dh_auto_build-arch:
+	# execute the build
 	dh_auto_build
-	mv demos/.libs/gears demos/.libs/gears-vkd3d
-	mv demos/.libs/triangle demos/.libs/triangle-vkd3d
+	# rename demos to avoid conflicts with opengl demos of the same name
+	mv demos/.libs/gears demos/.libs/vkd3d-gears
+	mv demos/.libs/triangle demos/.libs/vkd3d-triangle
+
+override_dh_auto_build-indep:
+	# build only the documentation
+	make doxygen-doc
+
+override_dh_install-arch:
+	# generate manpages
+	help2man --no-info --no-discard-stderr \
+	         --version-string="$(DEB_VERSION)" \
+	         --name="shader compiler for vkd3d" \
+	         ./vkd3d-compiler > vkd3d-compiler.1
+	# install files into package directories
+	dh_install
+	# remove unused libtool archives
+	rm -f debian/tmp/usr/lib/*/*.la
+	# exclude headers from the architecture-dependent build
+	rm -f debian/tmp/usr/include/vkd3d/*
+
+override_dh_auto_install-indep:
+	# disabled for the architecture-independent build
+
+override_dh_auto_test-indep:
+	# disabled for the architecture-independent build
+
+override_dh_installdocs:
+	# set libvkd3d-doc as the main documentation package
+	dh_installdocs --exclude=libvkd3d-doc --all 2>/dev/null
+	dh_installdocs --package=libvkd3d-doc --doc-main-package=libvkd3d-doc
 
 override_dh_gencontrol:
+	# generate dlopen dependencies
 	dh_gencontrol -- -Vdlopen:Depends="$(shell ./debian/scripts/dpkg-depgrep vulkan)"
+
+override_dh_auto_clean:
+	# clean the package folder
+	dh_auto_clean
+	# remove leftover empty directories
+	rm -rf bin doc

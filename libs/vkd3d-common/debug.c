@@ -20,13 +20,18 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
-#include <inttypes.h>
 
 #define VKD3D_DEBUG_BUFFER_COUNT 64
 #define VKD3D_DEBUG_BUFFER_SIZE 512
+
+extern const char *vkd3d_dbg_env_name DECLSPEC_HIDDEN;
 
 static const char *debug_level_names[] =
 {
@@ -46,7 +51,7 @@ enum vkd3d_dbg_level vkd3d_dbg_get_level(void)
     if (level != ~0u)
         return level;
 
-    if (!(vkd3d_debug = getenv("VKD3D_DEBUG")))
+    if (!(vkd3d_debug = getenv(vkd3d_dbg_env_name)))
         vkd3d_debug = "";
 
     for (i = 0; i < ARRAY_SIZE(debug_level_names); ++i)
@@ -294,4 +299,65 @@ const char *debugstr_w(const WCHAR *wstr, size_t wchar_size)
     if (wchar_size == 2)
         return debugstr_w16((const uint16_t *)wstr);
     return debugstr_w32((const uint32_t *)wstr);
+}
+
+unsigned int vkd3d_env_var_as_uint(const char *name, unsigned int default_value)
+{
+    const char *value = getenv(name);
+    unsigned long r;
+    char *end_ptr;
+
+    if (value)
+    {
+        errno = 0;
+        r = strtoul(value, &end_ptr, 0);
+        if (!errno && end_ptr != value)
+            return min(r, UINT_MAX);
+    }
+
+    return default_value;
+}
+
+static bool is_option_separator(char c)
+{
+    return c == ',' || c == ';' || c == '\0';
+}
+
+bool vkd3d_debug_list_has_member(const char *string, const char *member)
+{
+    char prev_char, next_char;
+    const char *p;
+
+    p = string;
+    while (p)
+    {
+        if ((p = strstr(p, member)))
+        {
+            prev_char = p > string ? p[-1] : 0;
+            p += strlen(member);
+            next_char = *p;
+
+            if (is_option_separator(prev_char) && is_option_separator(next_char))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+uint64_t vkd3d_parse_debug_options(const char *string,
+        const struct vkd3d_debug_option *options, unsigned int option_count)
+{
+    uint64_t flags = 0;
+    unsigned int i;
+
+    for (i = 0; i < option_count; ++i)
+    {
+        const struct vkd3d_debug_option *opt = &options[i];
+
+        if (vkd3d_debug_list_has_member(string, opt->name))
+            flags |= opt->flag;
+    }
+
+    return flags;
 }

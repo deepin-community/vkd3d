@@ -46,6 +46,11 @@ VK_INSTANCE_PFN(vkGetPhysicalDeviceMemoryProperties)
 VK_INSTANCE_PFN(vkGetPhysicalDeviceProperties)
 VK_INSTANCE_PFN(vkGetPhysicalDeviceQueueFamilyProperties)
 VK_INSTANCE_PFN(vkGetPhysicalDeviceSparseImageFormatProperties)
+
+/* VK_KHR_get_physical_device_properties2 */
+VK_INSTANCE_EXT_PFN(vkGetPhysicalDeviceFeatures2KHR)
+VK_INSTANCE_EXT_PFN(vkGetPhysicalDeviceProperties2KHR)
+
 /* VK_EXT_debug_report */
 VK_INSTANCE_EXT_PFN(vkCreateDebugReportCallbackEXT)
 VK_INSTANCE_EXT_PFN(vkDestroyDebugReportCallbackEXT)
@@ -171,8 +176,35 @@ VK_DEVICE_PFN(vkSetEvent)
 VK_DEVICE_PFN(vkUnmapMemory)
 VK_DEVICE_PFN(vkUpdateDescriptorSets)
 VK_DEVICE_PFN(vkWaitForFences)
+
+/* VK_KHR_draw_indirect_count */
+VK_DEVICE_EXT_PFN(vkCmdDrawIndirectCountKHR)
+VK_DEVICE_EXT_PFN(vkCmdDrawIndexedIndirectCountKHR)
+
+/* VK_KHR_get_memory_requirements2 */
+VK_DEVICE_EXT_PFN(vkGetBufferMemoryRequirements2KHR)
+VK_DEVICE_EXT_PFN(vkGetImageMemoryRequirements2KHR)
+VK_DEVICE_EXT_PFN(vkGetImageSparseMemoryRequirements2KHR)
+
+/* VK_KHR_maintenance3 */
+VK_DEVICE_EXT_PFN(vkGetDescriptorSetLayoutSupportKHR)
+
 /* VK_KHR_push_descriptor */
 VK_DEVICE_EXT_PFN(vkCmdPushDescriptorSetKHR)
+
+/* VK_EXT_conditional_rendering */
+VK_DEVICE_EXT_PFN(vkCmdBeginConditionalRenderingEXT)
+VK_DEVICE_EXT_PFN(vkCmdEndConditionalRenderingEXT)
+
+/* VK_EXT_debug_marker */
+VK_DEVICE_EXT_PFN(vkDebugMarkerSetObjectNameEXT)
+
+/* VK_EXT_transform_feedback */
+VK_DEVICE_EXT_PFN(vkCmdBeginQueryIndexedEXT)
+VK_DEVICE_EXT_PFN(vkCmdBeginTransformFeedbackEXT)
+VK_DEVICE_EXT_PFN(vkCmdBindTransformFeedbackBuffersEXT)
+VK_DEVICE_EXT_PFN(vkCmdEndQueryIndexedEXT)
+VK_DEVICE_EXT_PFN(vkCmdEndTransformFeedbackEXT)
 
 #undef VK_INSTANCE_PFN
 #undef VK_INSTANCE_EXT_PFN

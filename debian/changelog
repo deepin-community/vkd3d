@@ -1,8 +1,133 @@
-vkd3d (1.1-5) UNRELEASED; urgency=medium
+vkd3d (1.2-15) unstable; urgency=medium
 
-  * update
+  * Fix lintian warnings.
+  * Enable link time optimization.
+  * Build headers on any architecture (closes: #1017106).
 
- -- Debian Wine Party <debian-wine@lists.debian.org>  Wed, 18 May 2022 10:02:45 +0800
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 24 Sep 2022 22:45:33 +0000
+
+vkd3d (1.2-14) unstable; urgency=medium
+
+  * Automatically update control file (closes: #1014663).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 24 Jul 2022 00:02:14 +0000
+
+vkd3d (1.2-13) unstable; urgency=medium
+
+  * Fix errors in doc-base file.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Mon, 04 Jul 2022 02:09:00 +0000
+
+vkd3d (1.2-12) unstable; urgency=medium
+
+  * Update standards version.
+  * Drop s390x from the supported architectures (closes: #1010331).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 05 Jun 2022 20:43:40 +0000
+
+vkd3d (1.2-11) unstable; urgency=medium
+
+  * Remove incorrectly named man pages.
+  * Change libvkd3d-doc section to doc.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 27 Feb 2022 06:00:20 +0000
+
+vkd3d (1.2-10) experimental; urgency=medium
+
+  * Fix header installation on non-x86 architectures.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Thu, 17 Feb 2022 19:01:50 +0000
+
+vkd3d (1.2-9) experimental; urgency=medium
+
+  * Fix architecture dependent libvkd3d-headers build dependency.
+  * Use makefile include to import package version string in debian/rules.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 05 Feb 2022 20:23:31 +0000
+
+vkd3d (1.2-8) experimental; urgency=medium
+
+  * Set libvkd3d-doc as the main documentation package (closes: #993570).
+  * Add mingw-w64-tools to the architecture independent build dependencies.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 05 Feb 2022 15:49:26 +0000
+
+vkd3d (1.2-7) experimental; urgency=medium
+
+  * Update standards to 4.6.0.
+  * Fix stringop-overread warnings.
+  * Skip failing tests when using nvidia devices.
+  * Skip failing tests when using llvmpipe from mesa 21 (closes: #994186).
+  * Fix file conflict between libvkd3d-doc and libvkd3d-dev (closes: #993570).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Fri, 04 Feb 2022 01:16:25 +0000
+
+vkd3d (1.2-6) experimental; urgency=medium
+
+  * Fix installation of the header files (closes: #992066).
+  * Replace files in libvkd3d-dev with libvkd3d-doc (closes: #992069).
+  * Require mesa-vulkan-drivers before version 21 (causes test failures).
+  * Include a few suggestions related to troubleshooting driver problems.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 11 Jul 2021 21:54:12 +0000
+
+vkd3d (1.2-5) experimental; urgency=medium
+
+  * Register documentation with doc-base.
+  * Update watch file standard to version 4.
+  * Use Build-Depends-Arch and Build-Depends-Indep.
+  * Remove debian revision from the shader symbols file.
+  * Require mingw only when building on x86 architectures.
+  * Require libvkd3d-headers only on non-x86 architectures.
+  * Provide a useful description in vkd3d-compiler's manpage.
+  * Move documentation into new arch:all libvkd3d-doc package.
+  * Mark libvkd3d-headers as multi-arch foreign (closes: #990753).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 11 Jul 2021 00:08:45 +0000
+
+vkd3d (1.2-4) experimental; urgency=medium
+
+  * Fix incorrect version string.
+  * Generate and install a manpage for vkd3d-compiler.
+  * Add new libvkd3d-headers and vkd3d-compiler packages.
+  * Move vkd3d-compiler into the vkd3d-compiler package (closes: #983776).
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 21 Mar 2021 20:03:39 +0000
+
+vkd3d (1.2-3) experimental; urgency=medium
+
+  * Add texlive-plain-generic to the build dependencies.
+  * Add texlive-fonts-recommended to the build dependencies.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Thu, 18 Feb 2021 15:47:05 +0000
+
+vkd3d (1.2-2) experimental; urgency=medium
+
+  * Update standards version to 4.5.1.
+  * Add texlive-latex-extra to the build dependencies.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Thu, 18 Feb 2021 03:52:47 +0000
+
+vkd3d (1.2-1) experimental; urgency=medium
+
+  [ Marc Dequènes ]
+  * New upstream release:
+    - Remove vulkan1.2.patch: fixed upstream.
+    - Refreshed version.patch.
+    - Updated symbols files.
+    - Add new package libvkd3d-shader1.
+
+  [ Jens Reyer ]
+  * Remove myself from Uploaders.
+
+  [ Michael Gilbert ]
+  * Update to debhelper 13.
+  * Update debian/copyright.
+  * Regenerate WIDL header files.
+  * Install upstream's documentation files.
+  * Install vkd3d-compiler in the dev package.
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sun, 07 Feb 2021 22:58:03 +0000
 
 vkd3d (1.1-5) unstable; urgency=medium
 

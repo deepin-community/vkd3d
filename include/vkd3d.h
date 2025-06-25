@@ -19,9 +19,11 @@
 #ifndef __VKD3D_H
 #define __VKD3D_H
 
+#include <vkd3d_types.h>
+
 #ifndef VKD3D_NO_WIN32_TYPES
-# include "vkd3d_windows.h"
-# include "vkd3d_d3d12.h"
+# include <vkd3d_windows.h>
+# include <vkd3d_d3d12.h>
 #endif  /* VKD3D_NO_WIN32_TYPES */
 
 #ifndef VKD3D_NO_VULKAN_H
@@ -32,17 +34,28 @@
 extern "C" {
 #endif  /* __cplusplus */
 
-#define VKD3D_FORCE_32_BIT_ENUM(name) name##_FORCE_32BIT = 0x7fffffff
-
 enum vkd3d_structure_type
 {
+    /* 1.0 */
     VKD3D_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
     VKD3D_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
     VKD3D_STRUCTURE_TYPE_IMAGE_RESOURCE_CREATE_INFO,
 
+    /* 1.1 */
     VKD3D_STRUCTURE_TYPE_OPTIONAL_INSTANCE_EXTENSIONS_INFO,
 
+    /* 1.2 */
+    VKD3D_STRUCTURE_TYPE_OPTIONAL_DEVICE_EXTENSIONS_INFO,
+    VKD3D_STRUCTURE_TYPE_APPLICATION_INFO,
+
     VKD3D_FORCE_32_BIT_ENUM(VKD3D_STRUCTURE_TYPE),
+};
+
+enum vkd3d_api_version
+{
+    VKD3D_API_VERSION_1_0,
+    VKD3D_API_VERSION_1_1,
+    VKD3D_API_VERSION_1_2,
 };
 
 typedef HRESULT (*PFN_vkd3d_signal_event)(HANDLE event);
@@ -71,6 +84,7 @@ struct vkd3d_instance_create_info
     uint32_t instance_extension_count;
 };
 
+/* Extends vkd3d_instance_create_info. Available since 1.1. */
 struct vkd3d_optional_instance_extensions_info
 {
     enum vkd3d_structure_type type;
@@ -78,6 +92,21 @@ struct vkd3d_optional_instance_extensions_info
 
     const char * const *extensions;
     uint32_t extension_count;
+};
+
+/* Extends vkd3d_instance_create_info. Available since 1.2. */
+struct vkd3d_application_info
+{
+    enum vkd3d_structure_type type;
+    const void *next;
+
+    const char *application_name;
+    uint32_t application_version;
+
+    const char *engine_name; /* "vkd3d" if NULL */
+    uint32_t engine_version; /* vkd3d version if engine_name is NULL */
+
+    enum vkd3d_api_version api_version;
 };
 
 struct vkd3d_device_create_info
@@ -97,6 +126,16 @@ struct vkd3d_device_create_info
 
     IUnknown *parent;
     LUID adapter_luid;
+};
+
+/* Extends vkd3d_device_create_info. Available since 1.2. */
+struct vkd3d_optional_device_extensions_info
+{
+    enum vkd3d_structure_type type;
+    const void *next;
+
+    const char * const *extensions;
+    uint32_t extension_count;
 };
 
 /* vkd3d_image_resource_create_info flags */
@@ -140,12 +179,19 @@ ULONG vkd3d_resource_incref(ID3D12Resource *resource);
 
 HRESULT vkd3d_serialize_root_signature(const D3D12_ROOT_SIGNATURE_DESC *desc,
         D3D_ROOT_SIGNATURE_VERSION version, ID3DBlob **blob, ID3DBlob **error_blob);
-
 HRESULT vkd3d_create_root_signature_deserializer(const void *data, SIZE_T data_size,
         REFIID iid, void **deserializer);
 
-DXGI_FORMAT vkd3d_get_dxgi_format(VkFormat format);
 VkFormat vkd3d_get_vk_format(DXGI_FORMAT format);
+
+/* 1.1 */
+DXGI_FORMAT vkd3d_get_dxgi_format(VkFormat format);
+
+/* 1.2 */
+HRESULT vkd3d_serialize_versioned_root_signature(const D3D12_VERSIONED_ROOT_SIGNATURE_DESC *desc,
+        ID3DBlob **blob, ID3DBlob **error_blob);
+HRESULT vkd3d_create_versioned_root_signature_deserializer(const void *data, SIZE_T data_size,
+        REFIID iid, void **deserializer);
 
 #endif  /* VKD3D_NO_PROTOTYPES */
 
@@ -176,11 +222,19 @@ typedef ULONG (*PFN_vkd3d_resource_incref)(ID3D12Resource *resource);
 
 typedef HRESULT (*PFN_vkd3d_serialize_root_signature)(const D3D12_ROOT_SIGNATURE_DESC *desc,
         D3D_ROOT_SIGNATURE_VERSION version, ID3DBlob **blob, ID3DBlob **error_blob);
-
 typedef HRESULT (*PFN_vkd3d_create_root_signature_deserializer)(const void *data, SIZE_T data_size,
         REFIID iid, void **deserializer);
 
 typedef VkFormat (*PFN_vkd3d_get_vk_format)(DXGI_FORMAT format);
+
+/* 1.1 */
+typedef DXGI_FORMAT (*PFN_vkd3d_get_dxgi_format)(VkFormat format);
+
+/* 1.2 */
+typedef HRESULT (*PFN_vkd3d_serialize_versioned_root_signature)(const D3D12_VERSIONED_ROOT_SIGNATURE_DESC *desc,
+        ID3DBlob **blob, ID3DBlob **error_blob);
+typedef HRESULT (*PFN_vkd3d_create_versioned_root_signature_deserializer)(const void *data, SIZE_T data_size,
+        REFIID iid, void **deserializer);
 
 #ifdef __cplusplus
 }
