@@ -34,15 +34,15 @@ struct rb_entry
     unsigned int flags;
 };
 
-typedef int (*rb_compare_func_t)(const void *key, const struct rb_entry *entry);
+typedef int (*rb_compare_func)(const void *key, const struct rb_entry *entry);
 
 struct rb_tree
 {
-    rb_compare_func_t compare;
+    rb_compare_func compare;
     struct rb_entry *root;
 };
 
-typedef void (rb_traverse_func_t)(struct rb_entry *entry, void *context);
+typedef void (rb_traverse_func)(struct rb_entry *entry, void *context);
 
 #define RB_FLAG_RED                0x1
 
@@ -127,55 +127,55 @@ static inline struct rb_entry *rb_postorder_next(struct rb_entry *iter)
 }
 
 /* iterate through the tree */
-#define rb_FOR_EACH(cursor, tree) \
+#define RB_FOR_EACH(cursor, tree) \
     for ((cursor) = rb_head((tree)->root); (cursor); (cursor) = rb_next(cursor))
 
 /* iterate through the tree using a tree entry */
-#define rb_FOR_EACH_ENTRY(elem, tree, type, field) \
-    for ((elem) = rb_ENTRY_VALUE(rb_head((tree)->root), type, field); \
+#define RB_FOR_EACH_ENTRY(elem, tree, type, field) \
+    for ((elem) = RB_ENTRY_VALUE(rb_head((tree)->root), type, field); \
          &(elem)->field; \
-         (elem) = rb_ENTRY_VALUE(rb_next(&elem->field), type, field))
+         (elem) = RB_ENTRY_VALUE(rb_next(&elem->field), type, field))
 
 /* iterate through the tree using using postorder, making it safe to free the entry */
-#define rb_FOR_EACH_DESTRUCTOR(cursor, cursor2, tree) \
+#define RB_FOR_EACH_DESTRUCTOR(cursor, cursor2, tree) \
     for ((cursor) = rb_postorder_head((tree)->root); \
          (cursor) && (((cursor2) = rb_postorder_next(cursor)) || 1); \
          (cursor) = (cursor2))
 
 /* iterate through the tree using a tree entry and postorder, making it safe to free the entry */
-#define rb_FOR_EACH_ENTRY_DESTRUCTOR(elem, elem2, tree, type, field) \
-    for ((elem) = rb_ENTRY_VALUE(rb_postorder_head((tree)->root), type, field); \
+#define RB_FOR_EACH_ENTRY_DESTRUCTOR(elem, elem2, tree, type, field) \
+    for ((elem) = RB_ENTRY_VALUE(rb_postorder_head((tree)->root), type, field); \
          &(elem)->field \
-             && (((elem2) = rb_ENTRY_VALUE(rb_postorder_next(&(elem)->field), type, field)) || 1); \
+             && (((elem2) = RB_ENTRY_VALUE(rb_postorder_next(&(elem)->field), type, field)) || 1); \
          (elem) = (elem2))
 
 
-static inline void rb_postorder(struct rb_tree *tree, rb_traverse_func_t *callback, void *context)
+static inline void rb_postorder(struct rb_tree *tree, rb_traverse_func *callback, void *context)
 {
     struct rb_entry *iter, *next;
-    rb_FOR_EACH_DESTRUCTOR(iter, next, tree) callback(iter, context);
+    RB_FOR_EACH_DESTRUCTOR(iter, next, tree) callback(iter, context);
 }
 
-static inline void rb_init(struct rb_tree *tree, rb_compare_func_t compare)
+static inline void rb_init(struct rb_tree *tree, rb_compare_func compare)
 {
     tree->compare = compare;
     tree->root = NULL;
 }
 
-static inline void rb_for_each_entry(struct rb_tree *tree, rb_traverse_func_t *callback, void *context)
+static inline void rb_for_each_entry(struct rb_tree *tree, rb_traverse_func *callback, void *context)
 {
     struct rb_entry *iter;
-    rb_FOR_EACH(iter, tree) callback(iter, context);
+    RB_FOR_EACH(iter, tree) callback(iter, context);
 }
 
-static inline void rb_clear(struct rb_tree *tree, rb_traverse_func_t *callback, void *context)
+static inline void rb_clear(struct rb_tree *tree, rb_traverse_func *callback, void *context)
 {
     /* Note that we use postorder here because the callback will likely free the entry. */
     if (callback) rb_postorder(tree, callback, context);
     tree->root = NULL;
 }
 
-static inline void rb_destroy(struct rb_tree *tree, rb_traverse_func_t *callback, void *context)
+static inline void rb_destroy(struct rb_tree *tree, rb_traverse_func *callback, void *context)
 {
     rb_clear(tree, callback, context);
 }

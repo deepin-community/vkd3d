@@ -1,0 +1,178 @@
+description: fix stringop-overread warnings in d3d12 test
+author: Michael Gilbert <mgilbert@debian.org>
+
+--- a/tests/d3d12.c
++++ b/tests/d3d12.c
+@@ -4702,6 +4702,12 @@ static void test_clear_render_target_vie
+ 
+     for (i = 0; i < ARRAY_SIZE(array_colors); ++i)
+     {
++        float floats[4];
++        floats[0] = array_colors[i].x;
++        floats[1] = array_colors[i].y;
++        floats[2] = array_colors[i].z;
++        floats[3] = array_colors[i].w;
++
+         memset(&rtv_desc, 0, sizeof(rtv_desc));
+         rtv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+@@ -4710,7 +4716,7 @@ static void test_clear_render_target_vie
+ 
+         ID3D12Device_CreateRenderTargetView(device, resource, &rtv_desc, rtv_handle);
+ 
+-        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, rtv_handle, &array_colors[i].x, 0, NULL);
++        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, rtv_handle, floats, 0, NULL);
+     }
+ 
+     transition_resource_state(command_list, resource,
+@@ -4733,6 +4739,12 @@ static void test_clear_render_target_vie
+ 
+     for (i = 0; i < ARRAY_SIZE(array_colors); ++i)
+     {
++        float floats[4];
++        floats[0] = array_colors[i].x;
++        floats[1] = array_colors[i].y;
++        floats[2] = array_colors[i].z;
++        floats[3] = array_colors[i].w;
++
+         memset(&rtv_desc, 0, sizeof(rtv_desc));
+         rtv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
+@@ -4741,7 +4753,7 @@ static void test_clear_render_target_vie
+ 
+         ID3D12Device_CreateRenderTargetView(device, resource, &rtv_desc, rtv_handle);
+ 
+-        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, rtv_handle, &array_colors[i].x, 0, NULL);
++        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, rtv_handle, floats, 0, NULL);
+     }
+ 
+     transition_resource_state(command_list, resource,
+@@ -5592,6 +5604,7 @@ static void test_multiple_render_targets
+ 
+ static void test_unknown_rtv_format(void)
+ {
++    static const float white_floats[] = {1.0f, 1.0f, 1.0f, 1.0f};
+     static const struct vec4 white = {1.0f, 1.0f, 1.0f, 1.0f};
+     struct vec4 expected_vec4 = {0.0f, 0.0f, 0.0f, 1.0f};
+     D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc;
+@@ -5657,7 +5670,7 @@ static void test_unknown_rtv_format(void
+     create_render_target(&context, &desc, &render_targets[1], &rtvs[2]);
+ 
+     for (i = 0; i < ARRAY_SIZE(rtvs); ++i)
+-        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, rtvs[i], &white.x, 0, NULL);
++        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, rtvs[i], white_floats, 0, NULL);
+ 
+     /* NULL RTV */
+     memset(&rtv_desc, 0, sizeof(rtv_desc));
+@@ -13506,7 +13519,7 @@ static void test_gather(void)
+         {0.3f, 1.3f, 1.2f, 0.2f}, {1.3f, 2.3f, 2.2f, 1.2f}, {2.3f, 3.3f, 3.2f, 2.2f}, {3.3f, 3.3f, 3.2f, 3.2f},
+         {0.3f, 1.3f, 1.3f, 0.3f}, {1.3f, 2.3f, 2.3f, 1.3f}, {2.3f, 3.3f, 3.3f, 2.3f}, {3.3f, 3.3f, 3.3f, 3.3f},
+     };
+-    static const struct vec4 white = {1.0f, 1.0f, 1.0f, 1.0f};
++    static const float white_floats[] = {1.0f, 1.0f, 1.0f, 1.0f};
+     static const D3D12_SUBRESOURCE_DATA resource_data = {&texture_data, sizeof(texture_data) / 4};
+ 
+     memset(&desc, 0, sizeof(desc));
+@@ -13543,7 +13556,7 @@ static void test_gather(void)
+     context.pipeline_state = create_pipeline_state(context.device,
+             context.root_signature, desc.rt_format, NULL, &ps_gather4, NULL);
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -13581,7 +13594,7 @@ static void test_gather(void)
+     context.pipeline_state = create_pipeline_state(context.device,
+             context.root_signature, desc.rt_format, NULL, &ps_gather4_offset, NULL);
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -13619,7 +13632,7 @@ static void test_gather(void)
+     context.pipeline_state = create_pipeline_state(context.device,
+             context.root_signature, desc.rt_format, NULL, &ps_gather4_green, NULL);
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -13657,7 +13670,7 @@ static void test_gather(void)
+     context.pipeline_state = create_pipeline_state(context.device,
+             context.root_signature, desc.rt_format, NULL, &ps_gather4_po, NULL);
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -13693,7 +13706,7 @@ static void test_gather(void)
+     constants.offset_x = 0;
+     constants.offset_y = 0;
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -13827,7 +13840,7 @@ static void test_gather_c(void)
+         {0.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f},
+         {0.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f},
+     };
+-    static const struct vec4 white = {1.0f, 1.0f, 1.0f, 1.0f};
++    static const float white_floats[] = {1.0f, 1.0f, 1.0f, 1.0f};
+     static const D3D12_SUBRESOURCE_DATA resource_data = {&texture_data, sizeof(texture_data) / 4};
+     static const D3D12_STATIC_SAMPLER_DESC sampler_desc =
+     {
+@@ -13883,7 +13896,7 @@ static void test_gather_c(void)
+     context.pipeline_state = create_pipeline_state(context.device,
+             context.root_signature, desc.rt_format, NULL, &ps_gather4_c, NULL);
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -13921,7 +13934,7 @@ static void test_gather_c(void)
+     context.pipeline_state = create_pipeline_state(context.device,
+             context.root_signature, desc.rt_format, NULL, &ps_gather4_po_c, NULL);
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -13957,7 +13970,7 @@ static void test_gather_c(void)
+     constants.offset_x = 0;
+     constants.offset_y = 0;
+ 
+-    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, &white.x, 0, NULL);
++    ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, context.rtv, white_floats, 0, NULL);
+ 
+     ID3D12GraphicsCommandList_OMSetRenderTargets(command_list, 1, &context.rtv, false, NULL);
+     ID3D12GraphicsCommandList_SetGraphicsRootSignature(command_list, context.root_signature);
+@@ -14752,6 +14765,12 @@ static void test_multisample_array_textu
+ 
+     for (i = 0; i < ARRAY_SIZE(colors); ++i)
+     {
++        float floats[4];
++        floats[0] = colors[i].x;
++        floats[1] = colors[i].y;
++        floats[2] = colors[i].z;
++        floats[3] = colors[i].w;
++
+         memset(&rtv_desc, 0, sizeof(rtv_desc));
+         rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
+         rtv_desc.Format = resource_desc.Format;
+@@ -14759,7 +14778,7 @@ static void test_multisample_array_textu
+         rtv_desc.Texture2DMSArray.ArraySize = 1;
+         ID3D12Device_CreateRenderTargetView(device, texture, &rtv_desc, cpu_handle);
+ 
+-        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, cpu_handle, &colors[i].x, 0, NULL);
++        ID3D12GraphicsCommandList_ClearRenderTargetView(command_list, cpu_handle, floats, 0, NULL);
+     }
+ 
+     transition_resource_state(command_list, texture,

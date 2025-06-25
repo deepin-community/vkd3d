@@ -1,0 +1,35 @@
+Troubleshooting
+===============
+
+If anything is not working correctly, please try these troubleshooting steps
+before submitting a bug report.
+
+First install the mesa-utils, vulkan-tools, and vkd3d-demos packages:
+
+$ sudo apt install mesa-utils vulkan-tools vkd3d-demos
+
+Get information about your mesa GL setup:
+
+$ glxinfo
+
+Verify that mesa can render its examples:
+
+$ glxgears
+$ glxheads
+
+Get information about your vulkan setup:
+
+$ vulkaninfo
+
+Verify that vulkan can render an example:
+
+$ vkcube
+
+Finally, verify that vkd3d can render its examples:
+
+$ vkd3d-triangle
+$ vkd3d-gears
+
+If anything goes wrong, try an internet search with the error message first.
+If that doesn't help, please submit a bug report against src:vkd3d with
+complete output from these steps.

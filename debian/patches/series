@@ -1,2 +1,7 @@
 version.patch
-vulkan1.2.patch
+
+fixes/nvidia.patch
+fixes/llvmpipe.patch
+fixes/byte-comparison.patch
+
+warnings/stringop-overread.patch

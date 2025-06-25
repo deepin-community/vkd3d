@@ -1,0 +1,11 @@
+Document: vkd3d
+Title: vkd3d application programming interface
+Abstract: This manual describes the programming interface for the vkd3d library.
+Section: Programming
+
+Format: pdf
+Files: /usr/share/doc/libvkd3d-doc/*.pdf.gz
+
+Format: html
+Files: /usr/share/doc/libvkd3d-doc/html/*
+Index: /usr/share/doc/libvkd3d-doc/html/index.html

@@ -1,9 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = @VKD3D_CFLAGS@
-AM_CPPFLAGS = -I$(srcdir)/include -I$(srcdir)/include/dummy -I$(srcdir)/include/private
+AM_CPPFLAGS = -I$(srcdir)/include -I$(srcdir)/include/private -I$(builddir)/include/private
+AM_LDFLAGS = -no-undefined
 
 widl_headers = \
 	include/vkd3d_d3d12.h \
+	include/vkd3d_d3d12sdklayers.h \
 	include/vkd3d_d3dcommon.h \
 	include/vkd3d_dxgi.h \
 	include/vkd3d_dxgi1_2.h \
@@ -16,9 +18,12 @@ widl_headers = \
 vkd3d_public_headers = \
 	include/vkd3d.h \
 	include/vkd3d_d3d12.h \
+	include/vkd3d_d3d12sdklayers.h \
 	include/vkd3d_d3dcommon.h \
 	include/vkd3d_dxgibase.h \
 	include/vkd3d_dxgiformat.h \
+	include/vkd3d_shader.h \
+	include/vkd3d_types.h \
 	include/vkd3d_utils.h \
 	include/vkd3d_windows.h
 
@@ -32,13 +37,17 @@ vkd3d_demos_shaders = \
 	demos/triangle_vs.h
 
 vkd3d_tests = \
-	tests/vkd3d_api
+	tests/vkd3d_api \
+	tests/vkd3d_common \
+	tests/vkd3d_shader_api
 
 vkd3d_cross_tests = \
-	tests/d3d12
+	tests/d3d12 \
+	tests/d3d12_invalid_usage
 
 vkd3d_test_headers = \
-	tests/vkd3d_d3d12_test.h
+	tests/d3d12_crosstest.h \
+	tests/d3d12_test_utils.h
 
 vkd3d_demos = \
 	demos/gears \
@@ -49,15 +58,17 @@ vkd3d_demos_headers = \
 	demos/demo_win32.h \
 	demos/demo_xcb.h
 
-BUILT_SOURCES = $(widl_headers)
+BUILT_SOURCES = $(widl_headers) \
+	include/private/vkd3d_version.h
 
-noinst_LTLIBRARIES = libvkd3d-common.la libvkd3d-shader.la
+noinst_LTLIBRARIES = libvkd3d-common.la
 libvkd3d_common_la_SOURCES = \
 	include/private/vkd3d_debug.h \
 	libs/vkd3d-common/debug.c \
-	libs/vkd3d-common/memory.c
+	libs/vkd3d-common/memory.c \
+	libs/vkd3d-common/utf8.c
 
-lib_LTLIBRARIES = libvkd3d.la libvkd3d-utils.la
+lib_LTLIBRARIES = libvkd3d-shader.la libvkd3d.la libvkd3d-utils.la
 
 libvkd3d_shader_la_SOURCES = \
 	include/private/list.h \
@@ -65,7 +76,8 @@ libvkd3d_shader_la_SOURCES = \
 	include/private/vkd3d_common.h \
 	include/private/vkd3d_debug.h \
 	include/private/vkd3d_memory.h \
-	include/private/vkd3d_shader.h \
+	include/vkd3d_shader.h \
+	libs/vkd3d-shader/checksum.c \
 	libs/vkd3d-shader/dxbc.c \
 	libs/vkd3d-shader/spirv.c \
 	libs/vkd3d-shader/trace.c \
@@ -73,15 +85,18 @@ libvkd3d_shader_la_SOURCES = \
 	libs/vkd3d-shader/vkd3d_shader_main.c \
 	libs/vkd3d-shader/vkd3d_shader_private.h
 libvkd3d_shader_la_CFLAGS = $(AM_CFLAGS) @SPIRV_TOOLS_CFLAGS@
-libvkd3d_shader_la_LIBADD = @SPIRV_TOOLS_LIBS@
+libvkd3d_shader_la_LDFLAGS = $(AM_LDFLAGS) -version-info 1:0:0
+libvkd3d_shader_la_LIBADD = libvkd3d-common.la @SPIRV_TOOLS_LIBS@
 if HAVE_LD_VERSION_SCRIPT
-libvkd3d_shader_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libs/vkd3d-shader/vkd3d_shader.map
+libvkd3d_shader_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libs/vkd3d-shader/vkd3d_shader.map
+EXTRA_libvkd3d_shader_la_DEPENDENCIES = $(srcdir)/libs/vkd3d-shader/vkd3d_shader.map
 endif
 
 libvkd3d_la_SOURCES = \
 	include/private/vkd3d_common.h \
 	include/private/vkd3d_debug.h \
 	include/private/vkd3d_memory.h \
+	include/private/vkd3d_utf8.h \
 	include/private/vkd3d_test.h \
 	include/vkd3d_d3d12.idl \
 	include/vkd3d_d3dcommon.idl \
@@ -94,47 +109,56 @@ libvkd3d_la_SOURCES = \
 	libs/vkd3d/vkd3d.map \
 	libs/vkd3d/vkd3d_main.c \
 	libs/vkd3d/vkd3d_private.h \
-	libs/vkd3d/vulkan_procs.h \
-	libs/vkd3d_version.c
-libvkd3d_la_LDFLAGS = -version-info 2:0:1
+	libs/vkd3d/vkd3d_shaders.h \
+	libs/vkd3d/vulkan_procs.h
+libvkd3d_la_LDFLAGS = $(AM_LDFLAGS) -version-info 3:0:2
 libvkd3d_la_LIBADD = libvkd3d-common.la libvkd3d-shader.la @DL_LIBS@ @PTHREAD_LIBS@
 if HAVE_LD_VERSION_SCRIPT
 libvkd3d_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libs/vkd3d/vkd3d.map
+EXTRA_libvkd3d_la_DEPENDENCIES = $(srcdir)/libs/vkd3d/vkd3d.map
 endif
 
 libvkd3d_utils_la_SOURCES = \
 	libs/vkd3d-utils/vkd3d_utils.map \
 	libs/vkd3d-utils/vkd3d_utils_main.c \
 	libs/vkd3d-utils/vkd3d_utils_private.h
-libvkd3d_utils_la_LDFLAGS = -version-info 1:1:0
-libvkd3d_utils_la_LIBADD = libvkd3d-common.la libvkd3d.la
+libvkd3d_utils_la_LDFLAGS = $(AM_LDFLAGS) -version-info 2:0:1
+libvkd3d_utils_la_LIBADD = libvkd3d-common.la libvkd3d.la @PTHREAD_LIBS@
 if HAVE_LD_VERSION_SCRIPT
 libvkd3d_utils_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libs/vkd3d-utils/vkd3d_utils.map
+EXTRA_libvkd3d_utils_la_DEPENDENCIES = $(srcdir)/libs/vkd3d-utils/vkd3d_utils.map
 endif
 
-EXTRA_DIST = LICENSE
+EXTRA_DIST = ANNOUNCE LICENSE
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkginclude_HEADERS = $(vkd3d_public_headers)
-nodist_pkgconfig_DATA = libvkd3d.pc libvkd3d-utils.pc
-CLEANFILES = libvkd3d.pc libvkd3d-utils.pc
-EXTRA_DIST += libs/vkd3d/libvkd3d.pc.in libs/vkd3d-utils/libvkd3d-utils.pc.in
+nodist_pkgconfig_DATA = libvkd3d.pc libvkd3d-shader.pc libvkd3d-utils.pc
+CLEANFILES = libvkd3d.pc libvkd3d-shader.pc libvkd3d-utils.pc
+EXTRA_DIST += \
+	libs/vkd3d/libvkd3d.pc.in \
+	libs/vkd3d-shader/libvkd3d-shader.pc.in \
+	libs/vkd3d-utils/libvkd3d-utils.pc.in
 
-noinst_PROGRAMS = vkd3d-compiler
+bin_PROGRAMS = vkd3d-compiler
 vkd3d_compiler_SOURCES = programs/vkd3d-compiler/main.c
-vkd3d_compiler_LDADD = libvkd3d-shader.la libvkd3d-common.la
+vkd3d_compiler_LDADD = libvkd3d-shader.la
 
 LDADD = libvkd3d.la libvkd3d-utils.la
-check_PROGRAMS = $(vkd3d_tests) $(vkd3d_cross_tests)
 AM_DEFAULT_SOURCE_EXT = .c
+if BUILD_TESTS
+check_PROGRAMS = $(vkd3d_tests) $(vkd3d_cross_tests)
 TESTS = $(vkd3d_tests) $(vkd3d_cross_tests)
-tests_d3d12_LDADD = $(LDADD) @PTHREAD_LIBS@
+tests_d3d12_LDADD = $(LDADD) @PTHREAD_LIBS@ @VULKAN_LIBS@
+tests_d3d12_invalid_usage_LDADD = $(LDADD) @VULKAN_LIBS@
 tests_vkd3d_api_LDADD = libvkd3d.la @VULKAN_LIBS@
+tests_vkd3d_shader_api_LDADD = libvkd3d-shader.la
+endif
 
 if BUILD_DEMOS
 DEMOS_LDADD = $(LDADD) libvkd3d-shader.la @XCB_LIBS@ @VULKAN_LIBS@
 DEMOS_CFLAGS = $(AM_CFLAGS) @XCB_CFLAGS@
-noinst_PROGRAMS += $(vkd3d_demos)
+noinst_PROGRAMS = $(vkd3d_demos)
 
 demos_gears_CFLAGS = $(DEMOS_CFLAGS)
 demos_gears_LDADD = $(DEMOS_LDADD) -lm
@@ -150,19 +174,20 @@ vkd3d_v_widl_ = $(vkd3d_v_widl_@AM_DEFAULT_V@)
 vkd3d_v_widl_0 = @echo "  WIDL    " $@;
 vkd3d_v_widl_1 =
 
+if HAVE_WIDL
+CLEANFILES += $(widl_headers)
+endif
 EXTRA_DIST += $(widl_headers) $(widl_headers:.h=.idl)
 $(widl_headers): %.h: %.idl
 if HAVE_WIDL
-	$(VKD3D_V_WIDL)$(WIDL) -h -o $@.tmp $<
-	$(AM_V_at)$(SED) -e '/#include <rpc.h>/d' -e '/#include <rpcndr.h>/d' <$@.tmp >$@
-	$(AM_V_at)$(RM) $@.tmp
+	$(VKD3D_V_WIDL)$(WIDL) -h -o $@ $<
 else
 	@echo "widl is required to generate $@"
 endif
 
 EXTRA_DIST += $(vkd3d_demos_shaders)
 
-libvkd3d-utils.pc: $(srcdir)/libs/vkd3d-utils/libvkd3d-utils.pc.in
+libvkd3d-utils.pc: $(srcdir)/libs/vkd3d-utils/libvkd3d-utils.pc.in Makefile
 	$(AM_V_GEN)$(SED) -e 's![@]prefix[@]!$(prefix)!g' \
 		-e 's![@]exec_prefix[@]!$(exec_prefix)!g' \
 		-e 's![@]includedir[@]!$(includedir)!g' \
@@ -170,7 +195,7 @@ libvkd3d-utils.pc: $(srcdir)/libs/vkd3d-utils/libvkd3d-utils.pc.in
 		-e 's![@]PACKAGE_VERSION[@]!$(PACKAGE_VERSION)!g' \
 		$< > $@
 
-libvkd3d.pc: $(srcdir)/libs/vkd3d/libvkd3d.pc.in
+libvkd3d-shader.pc: $(srcdir)/libs/vkd3d-shader/libvkd3d-shader.pc.in Makefile
 	$(AM_V_GEN)$(SED) -e 's![@]prefix[@]!$(prefix)!g' \
 		-e 's![@]exec_prefix[@]!$(exec_prefix)!g' \
 		-e 's![@]includedir[@]!$(includedir)!g' \
@@ -178,10 +203,23 @@ libvkd3d.pc: $(srcdir)/libs/vkd3d/libvkd3d.pc.in
 		-e 's![@]PACKAGE_VERSION[@]!$(PACKAGE_VERSION)!g' \
 		$< > $@
 
-libs/vkd3d_version.c: dummy-vkd3d-version
-	$(AM_V_GEN)version=`(GIT_DIR=$(top_srcdir)/.git git describe HEAD 2>/dev/null || echo "vkd3d-$(PACKAGE_VERSION)") | $(SED) -n -e '$$s/\(.*\)/const char vkd3d_build[] = "\1";/p'` && (echo $$version | cmp -s - $@) || echo $$version >$@ || ($(RM) $@ && exit 1)
-.SILENT: libs/vkd3d_version.c
-CLEANFILES += libs/vkd3d_version.c
+libvkd3d.pc: $(srcdir)/libs/vkd3d/libvkd3d.pc.in Makefile
+	$(AM_V_GEN)$(SED) -e 's![@]prefix[@]!$(prefix)!g' \
+		-e 's![@]exec_prefix[@]!$(exec_prefix)!g' \
+		-e 's![@]includedir[@]!$(includedir)!g' \
+		-e 's![@]libdir[@]!$(libdir)!g' \
+		-e 's![@]PACKAGE_VERSION[@]!$(PACKAGE_VERSION)!g' \
+		$< > $@
+
+include/private/vkd3d_version.h: dummy-vkd3d-version
+	@$(MKDIR_P) include/private
+	version=`(GIT_DIR=$(top_srcdir)/.git git rev-parse --short HEAD 2>/dev/null || echo '') \
+		| $(SED) -e 's!\(..*\)! (git \1)!' \
+		| $(SED) -n -e '$$s!\(.*\)!#define VKD3D_VCS_ID "\1"!p'` \
+		&& (echo $$version | cmp -s - $@) \
+		|| echo $$version >$@ || ($(RM) $@ && exit 1)
+.SILENT: include/private/vkd3d_version.h
+CLEANFILES += include/private/vkd3d_version.h
 
 .PHONY: dummy-vkd3d-version
 dummy-vkd3d-version:
@@ -210,7 +248,7 @@ $(CROSS32_IMPLIBS): %.cross32.a: %.cross32.def
 	$(AM_V_GEN)$(CROSS32_DLLTOOL) -k -m i386 --as-flags=-32 -d $< -l $@
 
 $(CROSS32_EXEFILES): %.cross32.exe: %.c $(CROSS32_IMPLIBS) $(widl_headers)
-	$(AM_V_CCLD)depbase=`echo $@ | sed 's![^/]*$$!$(DEPDIR)/&!;s!\.exe$$!!'`; \
+	$(AM_V_CCLD)depbase=`echo $@ | $(SED) 's![^/]*$$!$(DEPDIR)/&!;s!\.exe$$!!'`; \
 	$(CROSS32_CC) $(CROSS_CFLAGS) -MT $@ -MD -MP -MF $$depbase.Tpo -o $@ $< $(CROSS32_IMPLIBS) -ldxgi -lgdi32 && \
 	$(am__mv) $$depbase.Tpo $$depbase.Po
 else
@@ -244,3 +282,9 @@ endif
 
 .PHONY: crosstest crosstest32 crosstest64
 crosstest: crosstest32 crosstest64
+
+if BUILD_DOC
+@DX_RULES@
+all: doxygen-doc
+CLEANFILES += $(DX_CLEANFILES)
+endif

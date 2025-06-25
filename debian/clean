@@ -1,11 +1,25 @@
-bin/*
 aclocal.m4
 confcache
 configure
 config.log
+
+bin/*
+
 m4/lt*.m4
 m4/libtool.m4
-libs/vkd3d_version.c
+
 include/config.h.in
+include/vkd3d_d3dcommon.h
+include/vkd3d_d3d12.h
+include/vkd3d_d3d12sdklayers.h
+include/vkd3d_dxgi.h
+include/vkd3d_dxgibase.h
+include/vkd3d_dxgitype.h
+include/vkd3d_dxgiformat.h
+include/vkd3d_dxgi1_2.h
+include/vkd3d_dxgi1_3.h
+include/vkd3d_dxgi1_4.h
+
+*.1
 
 debian/files
